@@ -344,10 +344,13 @@
 
     /* ===== Post shared shell ===== */
     .post {
+      --arlo-green: #0e5741;
+      --arlo-green-deep: #0f4c3a;
+      --arlo-mint: #00dd8c;
       width: 1200px;
       height: 1200px;
       box-sizing: border-box;
-      background: #0e5741;
+      background: var(--arlo-green);
       padding: 36px;
       display: flex;
       flex-direction: column;
@@ -360,7 +363,7 @@
       min-height: 0;
       width: 100%;
       box-sizing: border-box;
-      background: #0f4c3a;
+      background: var(--arlo-green-deep);
       border-radius: 32px;
       padding: 72px;
       display: flex;
@@ -397,13 +400,13 @@
       word-break: break-word;
     }
     .post-default .post-headline .accent {
-      color: #00dd8c;
+      color: var(--arlo-mint);
     }
     .post-default .photo-frame {
       box-sizing: border-box;
       width: 618px;
       height: 618px;
-      border: 2.239px solid #00dd8c;
+      border: 2.239px solid var(--arlo-mint);
       border-radius: 36px;
       padding: 26.87px;
       flex-shrink: 0;
@@ -424,7 +427,7 @@
       position: absolute;
       left: 26.87px;
       bottom: 26.87px;
-      background: #0e5741;
+      background: var(--arlo-green);
       border-radius: 223.913px;
       padding: 17.913px 35.826px;
       display: flex;
@@ -467,7 +470,7 @@
     .post-quote .post-headline .accent {
       font-family: 'Sohne Buch Kursiv', 'Sohne Buch', Inter, sans-serif;
       font-style: normal;
-      color: #00dd8c;
+      color: var(--arlo-mint);
     }
     .post-quote .post-bottom {
       display: flex;
@@ -483,7 +486,7 @@
     }
     .post-quote .photo-frame {
       box-sizing: border-box;
-      border: 3.5px solid #00dd8c;
+      border: 2.5px solid var(--arlo-mint);
       border-radius: 16px;
       padding: 12px;
       flex-shrink: 0;
@@ -513,7 +516,7 @@
       font-size: 48px;
       line-height: 1.3;
       letter-spacing: 0.6px;
-      color: #00dd8c;
+      color: var(--arlo-mint);
       word-break: break-word;
     }
     .post-quote .person-role {
@@ -543,6 +546,14 @@
       color: #6b7280;
       min-height: 16px;
       flex-shrink: 0;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      .post {
+        --arlo-green: color(display-p3 0.0549 0.34118 0.2549);
+        --arlo-green-deep: color(display-p3 0.05882 0.29804 0.22745);
+        --arlo-mint: color(display-p3 0 0.86667 0.54902);
+      }
     }
 
     @media (max-width: 900px) {
@@ -935,7 +946,7 @@
       }
 
       async function exportPng(node) {
-        if (!window.htmlToImage || !window.htmlToImage.toPng) {
+        if (!window.htmlToImage || !window.htmlToImage.toCanvas) {
           throw new Error('html-to-image failed to load. Serve this folder over HTTP.');
         }
         await waitForAssets(node);
@@ -945,8 +956,19 @@
         const prevTransform = scaler ? scaler.style.transform : '';
         if (scaler) scaler.style.transform = 'none';
 
+        const originalGetContext = HTMLCanvasElement.prototype.getContext;
+        const useP3 = supportsDisplayP3Canvas();
+        if (useP3) {
+          HTMLCanvasElement.prototype.getContext = function (type, attrs) {
+            if (type === '2d') {
+              attrs = Object.assign({}, attrs || {}, { colorSpace: 'display-p3' });
+            }
+            return originalGetContext.call(this, type, attrs);
+          };
+        }
+
         try {
-          return await window.htmlToImage.toPng(node, {
+          const canvas = await window.htmlToImage.toCanvas(node, {
             width: 1200,
             height: 1200,
             pixelRatio: 1,
@@ -956,10 +978,135 @@
               margin: '0',
             },
           });
+          const blob = await new Promise(function (resolve, reject) {
+            canvas.toBlob(function (result) {
+              if (result) resolve(result);
+              else reject(new Error('Could not encode PNG.'));
+            }, 'image/png');
+          });
+          const bytes = new Uint8Array(await blob.arrayBuffer());
+          const tagged = useP3 ? await renamePngProfile(bytes) : bytes;
+          return await bytesToDataUrl(tagged);
         } finally {
+          HTMLCanvasElement.prototype.getContext = originalGetContext;
           if (scaler) scaler.style.transform = prevTransform || '';
           scalePreviews();
         }
+      }
+
+      function supportsDisplayP3Canvas() {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d', { colorSpace: 'display-p3' });
+          return !!(ctx && ctx.getContextAttributes && ctx.getContextAttributes().colorSpace === 'display-p3');
+        } catch (err) {
+          return false;
+        }
+      }
+
+      function utf16be(str) {
+        const out = new Uint8Array(str.length * 2);
+        for (let i = 0; i < str.length; i++) {
+          const code = str.charCodeAt(i);
+          out[i * 2] = code >> 8;
+          out[i * 2 + 1] = code & 255;
+        }
+        return out;
+      }
+
+      function indexOfBytes(haystack, needle) {
+        outer: for (let i = 0; i <= haystack.length - needle.length; i++) {
+          for (let j = 0; j < needle.length; j++) {
+            if (haystack[i + j] !== needle[j]) continue outer;
+          }
+          return i;
+        }
+        return -1;
+      }
+
+      function crc32(data) {
+        let crc = 0xffffffff;
+        for (let i = 0; i < data.length; i++) {
+          crc ^= data[i];
+          for (let bit = 0; bit < 8; bit++) {
+            crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+          }
+        }
+        return (crc ^ 0xffffffff) >>> 0;
+      }
+
+      function pngChunk(type, data) {
+        const typeBytes = new TextEncoder().encode(type);
+        const out = new Uint8Array(12 + data.length);
+        const view = new DataView(out.buffer);
+        view.setUint32(0, data.length);
+        out.set(typeBytes, 4);
+        out.set(data, 8);
+        const signed = new Uint8Array(4 + data.length);
+        signed.set(typeBytes, 0);
+        signed.set(data, 4);
+        view.setUint32(8 + data.length, crc32(signed));
+        return out;
+      }
+
+      async function inflateZlib(bytes) {
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
+        return new Uint8Array(await new Response(stream).arrayBuffer());
+      }
+
+      async function deflateZlib(bytes) {
+        const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'));
+        return new Uint8Array(await new Response(stream).arrayBuffer());
+      }
+
+      async function renamePngProfile(bytes) {
+        const longName = utf16be('Display P3 Gamut with sRGB Transfer');
+        const shortName = utf16be('Display P3');
+        let offset = 8;
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        while (offset + 8 <= bytes.length) {
+          const length = view.getUint32(offset);
+          const type = String.fromCharCode(
+            bytes[offset + 4], bytes[offset + 5], bytes[offset + 6], bytes[offset + 7]
+          );
+          if (type === 'iCCP') {
+            const data = bytes.slice(offset + 8, offset + 8 + length);
+            let end = 0;
+            while (end < data.length && data[end] !== 0) end++;
+            const compressed = data.slice(end + 2);
+            const profile = await inflateZlib(compressed);
+            const at = indexOfBytes(profile, longName);
+            if (at < 8) return bytes;
+            const renamed = new Uint8Array(profile);
+            renamed.set(shortName, at);
+            renamed.fill(0, at + shortName.length, at + longName.length);
+            new DataView(renamed.buffer).setUint32(at - 8, shortName.length);
+            const packed = await deflateZlib(renamed);
+            const chunkData = new Uint8Array(end + 2 + packed.length);
+            chunkData.set(data.slice(0, end + 1), 0);
+            chunkData[end + 1] = 0;
+            chunkData.set(packed, end + 2);
+            const chunk = pngChunk('iCCP', chunkData);
+            const next = offset + 12 + length;
+            const out = new Uint8Array(offset + chunk.length + (bytes.length - next));
+            out.set(bytes.slice(0, offset), 0);
+            out.set(chunk, offset);
+            out.set(bytes.slice(next), offset + chunk.length);
+            return out;
+          }
+          if (type === 'IEND') break;
+          offset += 12 + length;
+        }
+        return bytes;
+      }
+
+      function bytesToDataUrl(bytes) {
+        return new Promise(function (resolve, reject) {
+          const reader = new FileReader();
+          reader.onload = function () { resolve(String(reader.result || '')); };
+          reader.onerror = function () { reject(reader.error || new Error('Could not read PNG.')); };
+          reader.readAsDataURL(new Blob([bytes], { type: 'image/png' }));
+        });
       }
 
       function downloadDataUrl(dataUrl, filename) {
