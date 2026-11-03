@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="240" height="96" viewBox="0 0 240 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Logo">
+<g id="Union">
+<path d="M34.45 0H59.28L93.6 93.6H71.63C58.3094 80.0506 40.3687 77.8346 26.191 80.4344L21.45 93.6H0L34.45 0ZM46.41 24.117L34.71 56.8379L32.9961 61.5816C42.0255 61.1554 51.9468 62.2955 61.611 65.9849L58.24 56.8379L46.41 24.117Z" fill-rule="evenodd" clip-rule="evenodd" fill="white" style="fill:white;fill-opacity:1;"/>
+<path d="M165.6 93.6V0H144V93.6H165.6Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path d="M204.6 94.8C225.384 94.8 240 80.3738 240 58.8656C240 37.3574 225.384 22.8 204.6 22.8C183.682 22.8 169.2 37.3574 169.2 58.8656C169.2 80.3738 183.682 94.8 204.6 94.8ZM204.6 77.7508C196.018 77.7508 190.52 70.9312 190.52 58.8656C190.52 46.8 196.018 39.9803 204.6 39.9803C213.182 39.9803 218.68 46.8 218.68 58.8656C218.68 70.9312 213.182 77.7508 204.6 77.7508Z" fill-rule="evenodd" clip-rule="evenodd" fill="white" style="fill:white;fill-opacity:1;"/>
+<path d="M140.4 24.2626V44.486C138.181 44.0921 136.615 43.9608 134.266 43.9608C125.26 43.9608 118.082 49.6075 118.082 59.5879V93.6H97.2V24.394H118.082V33.4551C121.215 27.9396 127.871 24 135.832 24C137.79 24 139.095 24.1313 140.4 24.2626Z" fill="white" style="fill:white;fill-opacity:1;"/>
+</g>
+</g>
+</svg>

@@ -1,0 +1,1084 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>Welcome Post Generator</title>
+
+  <style>
+    @font-face {
+      font-family: 'Sohne Buch';
+      src: url('src/fonts/soehne-buch.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Sohne Buch Kursiv';
+      src: url('src/fonts/soehne-buch-kursiv.woff2') format('woff2');
+      font-weight: 400;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    body {
+      margin: 24px;
+      font-family: "Inter", Helvetica, Arial, sans-serif;
+      color: #222;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+    .left-col,
+    .preview-col {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+      box-sizing: border-box;
+      flex: 1;
+      height: 100%;
+    }
+    .label {
+      font-size: 12px;
+      color: #434647;
+      margin: 0 0 6px 0;
+    }
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .input.textarea {
+      min-height: 100px;
+      resize: vertical;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+    .input:focus {
+      border-color: #00D0FF;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+    .row { margin-bottom: 12px; }
+    .hint {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      background: #0E5741;
+      color: #fff;
+      font-weight: 600;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+    .btn.secondary {
+      background: #f3f4f6;
+      color: #1D1F20;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+    .file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+    .file-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #d7e3de;
+      background: #f8faf9;
+      color: #0E5741;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .file-btn svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .file-btn span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-btn:hover {
+      background: #0E5741;
+      border-color: #0E5741;
+      color: #fff;
+    }
+    .file-btn:focus-within,
+    .file-input:focus-visible + .file-btn,
+    .file-input:focus + .file-btn {
+      box-shadow: 0 0 0 3px rgba(14, 87, 65, 0.18);
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+      padding: 12px;
+      background: #f8faf9;
+      border: 1px solid #e7eeeb;
+      border-radius: 10px;
+    }
+    .slider-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .slider-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1D1F20;
+    }
+    .slider-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .slider output {
+      font-size: 11px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #0E5741;
+      background: #fff;
+      border: 1px solid #d7e3de;
+      border-radius: 999px;
+      min-width: 34px;
+      padding: 2px 7px;
+      text-align: center;
+      line-height: 16px;
+    }
+    .slider input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 16px;
+      margin: 0;
+      background: transparent;
+      cursor: pointer;
+      --pct: 50%;
+    }
+    .slider input[type="range"]:focus {
+      outline: none;
+    }
+    .slider input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(to right, #0E5741 var(--pct), #d7e3de var(--pct));
+    }
+    .slider input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      margin-top: -6px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #0E5741;
+      box-shadow: 0 1px 2px rgba(14, 87, 65, 0.18);
+    }
+    .slider input[type="range"]:hover::-webkit-slider-thumb {
+      background: #0E5741;
+    }
+    .slider input[type="range"]:focus-visible::-webkit-slider-thumb {
+      box-shadow: 0 0 0 3px rgba(14, 87, 65, 0.2);
+    }
+    .slider input[type="range"]::-moz-range-track {
+      height: 4px;
+      border: 0;
+      border-radius: 999px;
+      background: #d7e3de;
+    }
+    .slider input[type="range"]::-moz-range-progress {
+      height: 4px;
+      border-radius: 999px;
+      background: #0E5741;
+    }
+    .slider input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #0E5741;
+    }
+    .btn-reset {
+      appearance: none;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #6b7280;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-reset svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+    .btn-reset:hover {
+      background: #f3f4f6;
+      color: #1D1F20;
+    }
+    .btn-reset:focus-visible {
+      outline: 2px solid #00D0FF;
+      outline-offset: 1px;
+    }
+    .section-divider {
+      border: 0;
+      border-top: 1px dotted #d1d5db;
+      margin: 16px 0;
+    }
+    .preview-card {
+      background: #fff;
+      border: 1px dashed #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+      box-sizing: border-box;
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 8px 0;
+      flex-shrink: 0;
+    }
+    .styles-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      flex-wrap: nowrap;
+      flex: 1;
+      min-height: 0;
+    }
+    .style-card {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0;
+      min-width: 0;
+      background: #fff;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .style-title {
+      font-size: 12px;
+      color: #6b7280;
+      margin: 0 0 8px 0;
+      text-align: center;
+    }
+    .style-actions {
+      margin-top: 0;
+      padding-top: 16px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .style-actions .btn {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .preview-frame {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #f3f4f6;
+      position: relative;
+    }
+    .preview-scaler {
+      width: 1200px;
+      height: 1200px;
+      transform-origin: top left;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* ===== Post shared shell ===== */
+    .post {
+      width: 1200px;
+      height: 1200px;
+      box-sizing: border-box;
+      background: #0e5741;
+      padding: 36px;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Sohne Buch', Inter, Helvetica, Arial, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    .post-inner {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      box-sizing: border-box;
+      background: #0f4c3a;
+      border-radius: 32px;
+      padding: 72px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+    .post-logo {
+      width: 240px;
+      height: 96px;
+      display: block;
+      flex-shrink: 0;
+    }
+    .post-photo-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      max-width: none;
+      display: block;
+    }
+
+    /* ===== Default style ===== */
+    .post-default .post-copy {
+      width: 100%;
+    }
+    .post-default .post-headline {
+      margin: 0;
+      font-family: 'Sohne Buch', Inter, sans-serif;
+      font-weight: 400;
+      font-size: 80px;
+      line-height: 1;
+      letter-spacing: -0.8px;
+      color: #fff;
+      word-break: break-word;
+    }
+    .post-default .post-headline .accent {
+      color: #00dd8c;
+    }
+    .post-default .photo-frame {
+      box-sizing: border-box;
+      width: 618px;
+      height: 618px;
+      border: 2.239px solid #00dd8c;
+      border-radius: 36px;
+      padding: 26.87px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .post-default .photo-wrap {
+      position: relative;
+      width: 564.261px;
+      height: 564.261px;
+      border-radius: 16px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #d9d9d9;
+    }
+    .post-default .role-pill {
+      position: absolute;
+      left: 26.87px;
+      bottom: 26.87px;
+      background: #0e5741;
+      border-radius: 223.913px;
+      padding: 17.913px 35.826px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: calc(100% - 53.74px);
+      box-sizing: border-box;
+    }
+    .post-default .role-pill span {
+      font-family: 'Sohne Buch', Inter, sans-serif;
+      font-size: 26.87px;
+      line-height: 1.2;
+      letter-spacing: 3.8px;
+      text-transform: uppercase;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    /* ===== Quote style ===== */
+    .post-quote .post-top {
+      display: flex;
+      flex-direction: column;
+      gap: 64px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .post-quote .post-headline {
+      margin: 0;
+      font-family: 'Sohne Buch', Inter, sans-serif;
+      font-weight: 400;
+      font-size: 80px;
+      line-height: 1;
+      letter-spacing: -0.8px;
+      color: #fff;
+      word-break: break-word;
+    }
+    .post-quote .post-headline .accent {
+      font-family: 'Sohne Buch Kursiv', 'Sohne Buch', Inter, sans-serif;
+      font-style: normal;
+      color: #00dd8c;
+    }
+    .post-quote .post-bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 57px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .post-quote .person-row {
+      display: flex;
+      gap: 32px;
+      align-items: flex-end;
+    }
+    .post-quote .photo-frame {
+      box-sizing: border-box;
+      border: 3.5px solid #00dd8c;
+      border-radius: 16px;
+      padding: 12px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+    }
+    .post-quote .photo-wrap {
+      position: relative;
+      width: 249.997px;
+      height: 249.997px;
+      border-radius: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #d9d9d9;
+    }
+    .post-quote .person-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      justify-content: flex-end;
+      padding-bottom: 8px;
+      min-width: 0;
+    }
+    .post-quote .person-name {
+      margin: 0;
+      font-family: 'Sohne Buch', Inter, sans-serif;
+      font-size: 48px;
+      line-height: 1.3;
+      letter-spacing: 0.6px;
+      color: #00dd8c;
+      word-break: break-word;
+    }
+    .post-quote .person-role {
+      margin: 0;
+      font-family: 'Sohne Buch', Inter, sans-serif;
+      font-size: 32px;
+      line-height: 1.3;
+      letter-spacing: 4.2px;
+      text-transform: uppercase;
+      color: #fff;
+      word-break: break-word;
+    }
+    .post-quote .quote-text {
+      margin: 0;
+      font-family: 'Sohne Buch', Inter, sans-serif;
+      font-size: 45px;
+      line-height: 1.3;
+      letter-spacing: 1.2px;
+      color: #fff;
+      word-break: break-word;
+      width: 100%;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #6b7280;
+      min-height: 16px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+      .left-col .card,
+      .preview-card {
+        height: auto;
+        flex: none;
+      }
+      .styles-row {
+        flex-direction: column;
+        flex: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h2 style="margin:0 0 10px 0; font-size:20px; font-weight:700;">Welcome Post Generator</h2>
+  <div class="grid">
+    <div class="left-col">
+      <div class="card">
+        <div class="row">
+          <p class="label">Name</p>
+          <input class="input" id="field-name" type="text" placeholder="Jane Doe" value="Jane Doe">
+        </div>
+        <div class="row">
+          <p class="label">Role</p>
+          <input class="input" id="field-role" type="text" placeholder="Head of Team" value="Head of Team">
+        </div>
+        <hr class="section-divider">
+
+        <div class="row">
+          <p class="label">Typography</p>
+          <div class="slider-group">
+            <div class="slider">
+              <div class="slider-head">
+                <span class="slider-label">Title</span>
+                <span class="slider-meta">
+                  <output id="title-size-out">80</output>
+                  <button type="button" class="btn-reset" data-reset="field-title-size" aria-label="Reset title size" title="Reset">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M4.5 12a7.5 7.5 0 0 1 12.7-5.4L19 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M19 4.5V9h-4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M19.5 12a7.5 7.5 0 0 1-12.7 5.4L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M5 19.5V15h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </span>
+              </div>
+              <input type="range" id="field-title-size" min="48" max="100" value="80" step="1" data-default="80">
+            </div>
+            <div class="slider">
+              <div class="slider-head">
+                <span class="slider-label">Role</span>
+                <span class="slider-meta">
+                  <output id="role-size-out">32</output>
+                  <button type="button" class="btn-reset" data-reset="field-role-size" aria-label="Reset role size" title="Reset">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M4.5 12a7.5 7.5 0 0 1 12.7-5.4L19 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M19 4.5V9h-4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M19.5 12a7.5 7.5 0 0 1-12.7 5.4L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M5 19.5V15h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </span>
+              </div>
+              <input type="range" id="field-role-size" min="18" max="48" value="32" step="1" data-default="32">
+            </div>
+            <div class="slider">
+              <div class="slider-head">
+                <span class="slider-label">Quote</span>
+                <span class="slider-meta">
+                  <output id="quote-size-out">45</output>
+                  <button type="button" class="btn-reset" data-reset="field-quote-size" aria-label="Reset quote size" title="Reset">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M4.5 12a7.5 7.5 0 0 1 12.7-5.4L19 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M19 4.5V9h-4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M19.5 12a7.5 7.5 0 0 1-12.7 5.4L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M5 19.5V15h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </span>
+              </div>
+              <input type="range" id="field-quote-size" min="24" max="60" value="45" step="1" data-default="45">
+            </div>
+          </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <div class="row">
+          <p class="label">Photo</p>
+          <input class="file-input" id="field-photo" type="file" accept="image/*">
+          <label class="file-btn" for="field-photo">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 16V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M8.5 9.5 12 6l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span id="photo-name">Choose photo</span>
+          </label>
+          <div class="slider-group">
+            <div class="slider">
+              <div class="slider-head">
+                <span class="slider-label">Zoom</span>
+                <span class="slider-meta"><output id="zoom-out">100%</output></span>
+              </div>
+              <input type="range" id="field-zoom" min="100" max="200" value="100" step="1">
+            </div>
+            <div class="slider">
+              <div class="slider-head">
+                <span class="slider-label">Horizontal</span>
+                <span class="slider-meta"><output id="pos-x-out">50%</output></span>
+              </div>
+              <input type="range" id="field-pos-x" min="0" max="100" value="50" step="1">
+            </div>
+            <div class="slider">
+              <div class="slider-head">
+                <span class="slider-label">Vertical</span>
+                <span class="slider-meta"><output id="pos-y-out">50%</output></span>
+              </div>
+              <input type="range" id="field-pos-y" min="0" max="100" value="50" step="1">
+            </div>
+          </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <div class="row">
+          <p class="label">Quote</p>
+          <textarea class="input textarea" id="field-quote" rows="5">I am excited to join the Arlo team because we are bringing a very modern member experience to small and mid-sized employers around the country that will drive employees to actually use the coverage they deserve.</textarea>
+          <p class="hint">Used only by the With Quote style.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-col">
+      <div class="preview-card" id="preview-card">
+        <div class="preview-header">
+          <h3 class="label" style="margin:0; font-size:16px;">Preview</h3>
+        </div>
+        <div class="styles-row">
+          <!-- Default -->
+          <div class="style-card">
+            <p class="style-title">Default</p>
+            <div class="preview-frame" data-preview-frame>
+              <div class="preview-scaler" data-preview-scaler>
+                <div class="post post-default" id="post-default" data-post>
+                  <div class="post-inner">
+                    <img class="post-logo" src="src/arlo_logo.svg" width="240" height="96" alt="Arlo">
+                    <div class="post-copy">
+                      <p class="post-headline">
+                        <span data-headline-prefix>Meet the Head of Team, </span><span class="accent" data-name-accent>Jane Doe!</span>
+                      </p>
+                    </div>
+                    <div class="photo-frame">
+                      <div class="photo-wrap">
+                        <img class="post-photo-img" data-photo src="src/placeholder.png" alt="">
+                        <div class="role-pill"><span data-role-pill>HEAD OF TEAM</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="style-actions">
+              <button type="button" class="btn" id="btn-download-default">Download PNG</button>
+              <button type="button" class="btn secondary" id="btn-copy-default">Copy image</button>
+            </div>
+          </div>
+
+          <!-- With Quote -->
+          <div class="style-card">
+            <p class="style-title">With Quote</p>
+            <div class="preview-frame" data-preview-frame>
+              <div class="preview-scaler" data-preview-scaler>
+                <div class="post post-quote" id="post-quote" data-post>
+                  <div class="post-inner">
+                    <div class="post-top">
+                      <img class="post-logo" src="src/arlo_logo.svg" width="240" height="96" alt="Arlo">
+                      <div class="post-copy">
+                        <p class="post-headline">
+                          <span>Welcome to </span><span class="accent">the Arlo Team!</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div class="post-bottom">
+                      <div class="person-row">
+                        <div class="photo-frame">
+                          <div class="photo-wrap">
+                            <img class="post-photo-img" data-photo src="src/placeholder.png" alt="">
+                          </div>
+                        </div>
+                        <div class="person-meta">
+                          <p class="person-name" data-name>Jane Doe</p>
+                          <p class="person-role" data-role>HEAD OF TEAM</p>
+                        </div>
+                      </div>
+                      <p class="quote-text" data-quote>"I am excited to join the Arlo team because we are bringing a very modern member experience to small and mid-sized employers around the country that will drive employees to actually use the coverage they deserve."</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="style-actions">
+              <button type="button" class="btn" id="btn-download-quote">Download PNG</button>
+              <button type="button" class="btn secondary" id="btn-copy-quote">Copy image</button>
+            </div>
+          </div>
+        </div>
+        <p class="status" id="status"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+  <script>
+    (function () {
+      const nameEl = document.getElementById('field-name');
+      const roleEl = document.getElementById('field-role');
+      const quoteEl = document.getElementById('field-quote');
+      const photoEl = document.getElementById('field-photo');
+      const zoomEl = document.getElementById('field-zoom');
+      const posXEl = document.getElementById('field-pos-x');
+      const posYEl = document.getElementById('field-pos-y');
+      const titleSizeEl = document.getElementById('field-title-size');
+      const roleSizeEl = document.getElementById('field-role-size');
+      const quoteSizeEl = document.getElementById('field-quote-size');
+      const zoomOut = document.getElementById('zoom-out');
+      const posXOut = document.getElementById('pos-x-out');
+      const posYOut = document.getElementById('pos-y-out');
+      const titleSizeOut = document.getElementById('title-size-out');
+      const roleSizeOut = document.getElementById('role-size-out');
+      const quoteSizeOut = document.getElementById('quote-size-out');
+      const statusEl = document.getElementById('status');
+
+      const photoImgs = Array.from(document.querySelectorAll('[data-photo]'));
+      const nameTargets = Array.from(document.querySelectorAll('[data-name]'));
+      const roleTargets = Array.from(document.querySelectorAll('[data-role]'));
+      const rolePillTargets = Array.from(document.querySelectorAll('[data-role-pill]'));
+      const headlinePrefixTargets = Array.from(document.querySelectorAll('[data-headline-prefix]'));
+      const nameAccentTargets = Array.from(document.querySelectorAll('[data-name-accent]'));
+      const quoteTargets = Array.from(document.querySelectorAll('[data-quote]'));
+      const headlines = Array.from(document.querySelectorAll('.post-headline'));
+      const quoteRoles = Array.from(document.querySelectorAll('.post-quote .person-role'));
+      const quoteTexts = Array.from(document.querySelectorAll('.post-quote .quote-text'));
+      const rolePills = Array.from(document.querySelectorAll('.post-default .role-pill span'));
+
+      let photoSrc = 'src/placeholder.png';
+
+      function setStatus(msg) {
+        if (statusEl) statusEl.textContent = msg || '';
+      }
+
+      function slugify(str) {
+        return (str || 'welcome')
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') || 'welcome';
+      }
+
+      function applyPhotoFraming() {
+        const zoom = Number(zoomEl.value) / 100;
+        const x = Number(posXEl.value) / 100;
+        const y = Number(posYEl.value) / 100;
+        zoomOut.textContent = Math.round(zoom * 100) + '%';
+        posXOut.textContent = Math.round(x * 100) + '%';
+        posYOut.textContent = Math.round(y * 100) + '%';
+        photoImgs.forEach(function (img) {
+          const frame = img.parentElement;
+          const frameW = frame.offsetWidth;
+          const frameH = frame.offsetHeight;
+          const nw = img.naturalWidth;
+          const nh = img.naturalHeight;
+          if (!frameW || !frameH || !nw || !nh) return;
+
+          const frameRatio = frameW / frameH;
+          const imgRatio = nw / nh;
+          let baseW;
+          let baseH;
+          if (imgRatio > frameRatio) {
+            baseH = frameH;
+            baseW = frameH * imgRatio;
+          } else {
+            baseW = frameW;
+            baseH = frameW / imgRatio;
+          }
+
+          const w = baseW * zoom;
+          const h = baseH * zoom;
+          const maxX = Math.max(0, w - frameW);
+          const maxY = Math.max(0, h - frameH);
+
+          img.style.width = w + 'px';
+          img.style.height = h + 'px';
+          img.style.left = (-x * maxX) + 'px';
+          img.style.top = (-y * maxY) + 'px';
+          img.style.transform = 'none';
+        });
+      }
+
+      function applyTypography() {
+        const titleSize = Number(titleSizeEl.value);
+        const roleSize = Number(roleSizeEl.value);
+        const quoteSize = Number(quoteSizeEl.value);
+        titleSizeOut.textContent = String(titleSize);
+        roleSizeOut.textContent = String(roleSize);
+        quoteSizeOut.textContent = String(quoteSize);
+
+        headlines.forEach(function (el) {
+          el.style.fontSize = titleSize + 'px';
+        });
+        quoteRoles.forEach(function (el) {
+          el.style.fontSize = roleSize + 'px';
+        });
+        rolePills.forEach(function (el) {
+          el.style.fontSize = Math.max(14, Math.round(roleSize * 0.84)) + 'px';
+        });
+        quoteTexts.forEach(function (el) {
+          el.style.fontSize = quoteSize + 'px';
+        });
+      }
+
+      function update() {
+        const name = (nameEl.value || '').trim() || 'Your Name';
+        const role = (roleEl.value || '').trim() || 'Your Title';
+        const quote = (quoteEl.value || '').trim();
+
+        headlinePrefixTargets.forEach(function (el) {
+          el.textContent = 'Meet the ' + role + ', ';
+        });
+        nameAccentTargets.forEach(function (el) {
+          el.textContent = name + '!';
+        });
+        nameTargets.forEach(function (el) {
+          el.textContent = name;
+        });
+        roleTargets.forEach(function (el) {
+          el.textContent = role.toUpperCase();
+        });
+        rolePillTargets.forEach(function (el) {
+          el.textContent = role.toUpperCase();
+        });
+        quoteTargets.forEach(function (el) {
+          const q = quote || 'Your quote here.';
+          el.textContent = '"' + q.replace(/^["“]|["”]$/g, '') + '"';
+        });
+        photoImgs.forEach(function (img) {
+          if (img.getAttribute('src') !== photoSrc) img.setAttribute('src', photoSrc);
+        });
+        applyPhotoFraming();
+        applyTypography();
+        paintSliders();
+      }
+
+      function paintSliders() {
+        document.querySelectorAll('.slider input[type="range"]').forEach(function (input) {
+          const min = Number(input.min);
+          const max = Number(input.max);
+          const pct = max === min ? 0 : ((Number(input.value) - min) / (max - min)) * 100;
+          input.style.setProperty('--pct', pct + '%');
+        });
+      }
+
+      function scalePreviews() {
+        document.querySelectorAll('[data-preview-frame]').forEach(function (frame) {
+          const scaler = frame.querySelector('[data-preview-scaler]');
+          if (!scaler) return;
+          const w = frame.clientWidth;
+          const scale = w / 1200;
+          scaler.style.transform = 'scale(' + scale + ')';
+        });
+      }
+
+      async function waitForAssets(node) {
+        await document.fonts.ready;
+        const imgs = Array.from(node.querySelectorAll('img'));
+        await Promise.all(imgs.map(function (img) {
+          if (img.complete && img.naturalWidth) return Promise.resolve();
+          return new Promise(function (resolve) {
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+          });
+        }));
+      }
+
+      async function exportPng(node) {
+        if (!window.htmlToImage || !window.htmlToImage.toPng) {
+          throw new Error('html-to-image failed to load. Serve this folder over HTTP.');
+        }
+        await waitForAssets(node);
+
+        // Temporarily unscale the preview parent so capture is true 1200x1200.
+        const scaler = node.closest('[data-preview-scaler]');
+        const prevTransform = scaler ? scaler.style.transform : '';
+        if (scaler) scaler.style.transform = 'none';
+
+        try {
+          return await window.htmlToImage.toPng(node, {
+            width: 1200,
+            height: 1200,
+            pixelRatio: 1,
+            cacheBust: true,
+            style: {
+              transform: 'none',
+              margin: '0',
+            },
+          });
+        } finally {
+          if (scaler) scaler.style.transform = prevTransform || '';
+          scalePreviews();
+        }
+      }
+
+      function downloadDataUrl(dataUrl, filename) {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      async function dataUrlToClipboard(dataUrl) {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob }),
+          ]);
+          return true;
+        }
+        throw new Error('Clipboard image copy is not supported in this browser.');
+      }
+
+      async function handleDownload(node, styleKey, btn) {
+        const name = (nameEl.value || '').trim() || 'welcome';
+        const filename = 'welcome-' + slugify(name) + '-' + styleKey + '.png';
+        btn.disabled = true;
+        setStatus('Generating PNG…');
+        try {
+          const dataUrl = await exportPng(node);
+          downloadDataUrl(dataUrl, filename);
+          setStatus('Downloaded ' + filename);
+        } catch (err) {
+          console.error(err);
+          setStatus(err && err.message ? err.message : 'Could not export PNG. Serve over HTTP and try again.');
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      async function handleCopy(node, btn) {
+        btn.disabled = true;
+        setStatus('Copying image…');
+        try {
+          const dataUrl = await exportPng(node);
+          await dataUrlToClipboard(dataUrl);
+          setStatus('Image copied to clipboard.');
+        } catch (err) {
+          console.error(err);
+          setStatus(err && err.message ? err.message : 'Could not copy image.');
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      photoImgs.forEach(function (img) {
+        img.addEventListener('load', applyPhotoFraming);
+      });
+
+      photoEl.addEventListener('change', function () {
+        const file = photoEl.files && photoEl.files[0];
+        const nameEl = document.getElementById('photo-name');
+        if (nameEl) nameEl.textContent = file ? file.name : 'Choose photo';
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function () {
+          photoSrc = String(reader.result || '');
+          update();
+        };
+        reader.readAsDataURL(file);
+      });
+
+      ['input', 'change'].forEach(function (evt) {
+        nameEl.addEventListener(evt, update);
+        roleEl.addEventListener(evt, update);
+        quoteEl.addEventListener(evt, update);
+        zoomEl.addEventListener(evt, update);
+        posXEl.addEventListener(evt, update);
+        posYEl.addEventListener(evt, update);
+        titleSizeEl.addEventListener(evt, update);
+        roleSizeEl.addEventListener(evt, update);
+        quoteSizeEl.addEventListener(evt, update);
+      });
+
+      document.querySelectorAll('[data-reset]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const input = document.getElementById(btn.getAttribute('data-reset'));
+          if (!input) return;
+          input.value = input.getAttribute('data-default') || input.defaultValue;
+          update();
+        });
+      });
+
+      const postDefault = document.getElementById('post-default');
+      const postQuote = document.getElementById('post-quote');
+      document.getElementById('btn-download-default').addEventListener('click', function () {
+        handleDownload(postDefault, 'default', this);
+      });
+      document.getElementById('btn-download-quote').addEventListener('click', function () {
+        handleDownload(postQuote, 'quote', this);
+      });
+      document.getElementById('btn-copy-default').addEventListener('click', function () {
+        handleCopy(postDefault, this);
+      });
+      document.getElementById('btn-copy-quote').addEventListener('click', function () {
+        handleCopy(postQuote, this);
+      });
+
+      const frames = document.querySelectorAll('[data-preview-frame]');
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(scalePreviews);
+        frames.forEach(function (frame) { ro.observe(frame); });
+      } else {
+        window.addEventListener('resize', scalePreviews);
+      }
+
+      update();
+      scalePreviews();
+    })();
+  </script>
+</body>
+</html>
