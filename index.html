@@ -587,6 +587,11 @@
           <p class="label">Role</p>
           <input class="input" id="field-role" type="text" placeholder="Head of Team" value="Head of Team">
         </div>
+        <div class="row">
+          <p class="label">Message</p>
+          <input class="input" id="field-message" type="text" placeholder="Meet the Head of Team," value="Meet the Head of Team,">
+          <p class="hint">Default style only. The name stays highlighted after this text.</p>
+        </div>
         <hr class="section-divider">
 
         <div class="row">
@@ -725,6 +730,7 @@
             </div>
             <div class="style-actions">
               <button type="button" class="btn" id="btn-download-default">Download PNG</button>
+              <button type="button" class="btn secondary" id="btn-download-svg-default">Download SVG</button>
               <button type="button" class="btn secondary" id="btn-copy-default">Copy image</button>
             </div>
           </div>
@@ -764,6 +770,7 @@
             </div>
             <div class="style-actions">
               <button type="button" class="btn" id="btn-download-quote">Download PNG</button>
+              <button type="button" class="btn secondary" id="btn-download-svg-quote">Download SVG</button>
               <button type="button" class="btn secondary" id="btn-copy-quote">Copy image</button>
             </div>
           </div>
@@ -778,6 +785,7 @@
     (function () {
       const nameEl = document.getElementById('field-name');
       const roleEl = document.getElementById('field-role');
+      const messageEl = document.getElementById('field-message');
       const quoteEl = document.getElementById('field-quote');
       const photoEl = document.getElementById('field-photo');
       const zoomEl = document.getElementById('field-zoom');
@@ -886,9 +894,11 @@
         const name = (nameEl.value || '').trim() || 'Your Name';
         const role = (roleEl.value || '').trim() || 'Your Title';
         const quote = (quoteEl.value || '').trim();
+        let message = (messageEl.value || '').trim() || ('Meet the ' + role + ',');
+        if (!/\s$/.test(message)) message += ' ';
 
         headlinePrefixTargets.forEach(function (el) {
-          el.textContent = 'Meet the ' + role + ', ';
+          el.textContent = message;
         });
         nameAccentTargets.forEach(function (el) {
           el.textContent = name + '!';
@@ -1147,6 +1157,47 @@
         }
       }
 
+      async function exportSvg(node) {
+        if (!window.htmlToImage || !window.htmlToImage.toSvg) {
+          throw new Error('html-to-image failed to load. Serve this folder over HTTP.');
+        }
+        await waitForAssets(node);
+        const scaler = node.closest('[data-preview-scaler]');
+        const prevTransform = scaler ? scaler.style.transform : '';
+        if (scaler) scaler.style.transform = 'none';
+        try {
+          return await window.htmlToImage.toSvg(node, {
+            width: 1200,
+            height: 1200,
+            cacheBust: true,
+            style: {
+              transform: 'none',
+              margin: '0',
+            },
+          });
+        } finally {
+          if (scaler) scaler.style.transform = prevTransform || '';
+          scalePreviews();
+        }
+      }
+
+      async function handleDownloadSvg(node, styleKey, btn) {
+        const name = (nameEl.value || '').trim() || 'welcome';
+        const filename = 'welcome-' + slugify(name) + '-' + styleKey + '.svg';
+        btn.disabled = true;
+        setStatus('Generating SVG…');
+        try {
+          const dataUrl = await exportSvg(node);
+          downloadDataUrl(dataUrl, filename);
+          setStatus('Downloaded ' + filename);
+        } catch (err) {
+          console.error(err);
+          setStatus(err && err.message ? err.message : 'Could not export SVG. Serve over HTTP and try again.');
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
       async function handleCopy(node, btn) {
         btn.disabled = true;
         setStatus('Copying image…');
@@ -1182,6 +1233,7 @@
       ['input', 'change'].forEach(function (evt) {
         nameEl.addEventListener(evt, update);
         roleEl.addEventListener(evt, update);
+        messageEl.addEventListener(evt, update);
         quoteEl.addEventListener(evt, update);
         zoomEl.addEventListener(evt, update);
         posXEl.addEventListener(evt, update);
@@ -1207,6 +1259,12 @@
       });
       document.getElementById('btn-download-quote').addEventListener('click', function () {
         handleDownload(postQuote, 'quote', this);
+      });
+      document.getElementById('btn-download-svg-default').addEventListener('click', function () {
+        handleDownloadSvg(postDefault, 'default', this);
+      });
+      document.getElementById('btn-download-svg-quote').addEventListener('click', function () {
+        handleDownloadSvg(postQuote, 'quote', this);
       });
       document.getElementById('btn-copy-default').addEventListener('click', function () {
         handleCopy(postDefault, this);
